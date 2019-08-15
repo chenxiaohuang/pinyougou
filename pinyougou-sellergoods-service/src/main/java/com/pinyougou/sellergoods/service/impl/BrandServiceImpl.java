@@ -10,8 +10,10 @@ import com.pinyougou.pojo.TbBrandExample;
 import com.pinyougou.sellergoods.service.BrandService;
 import entity.PageResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author 用户名
@@ -19,6 +21,7 @@ import java.util.List;
  * @date 2019/7/30 0030
  */
 @Service//这里写dubbo的service
+@Transactional
 public class BrandServiceImpl implements BrandService {
 
     @Autowired
@@ -87,6 +90,11 @@ public class BrandServiceImpl implements BrandService {
         Page<TbBrand> page = (Page<TbBrand>)brandMapper.selectByExample(example);
 
         return new PageResult(page.getTotal(),page.getResult() );
+    }
+
+    @Override
+    public List<Map> selectOptionList() {
+        return brandMapper.selectOptionList();
     }
 
 
