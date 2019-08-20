@@ -1,0 +1,11 @@
+//广告控制层（运营商后台）
+app.controller("contentController",function($scope,contentService){//引用service层js
+    $scope.contentList=[];//广告集合——包裹所有的种类广告
+    $scope.findByCategoryId=function(categoryId){//调用后端的controller方法并带上参数
+        contentService.findByCategoryId(categoryId).success(
+            function(response){
+                $scope.contentList[categoryId]=response;//取出一类广告：例如分类id为1的轮播广告
+            }
+        );
+    }
+});
