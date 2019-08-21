@@ -1,16 +1,24 @@
 package com.pinyougou.pojo;
 
+import org.apache.solr.client.solrj.beans.Field;
+import org.springframework.data.solr.core.mapping.Dynamic;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.Map;
 
 public class TbItem implements Serializable {
+
+    @Field
     private Long id;
 
+    @Field("item_title")
     private String title;
 
     private String sellPoint;
 
+    @Field("item_price")
     private BigDecimal price;
 
     private Integer stockCount;
@@ -19,6 +27,7 @@ public class TbItem implements Serializable {
 
     private String barcode;
 
+    @Field("item_image")
     private String image;
 
     private Long categoryid;
@@ -37,19 +46,35 @@ public class TbItem implements Serializable {
 
     private String isDefault;
 
+    @Field("item_goodsid")
     private Long goodsId;
 
     private String sellerId;
 
     private String cartThumbnail;
 
+    @Field("item_category")
     private String category;
 
+    @Field("item_brand")
     private String brand;
 
     private String spec;
 
+    @Field("item_seller")
     private String seller;
+
+    @Dynamic//spring date solr中的依赖才有这个注解；标识这是个动态域属性（组合的）
+    @Field("item_spec_*")// 这个包含多个属性的复制域@Dynamic被它标识能够使用*通配符拼接；@Field("item_spec_*")跟我们配置文件中的域名一致
+    private Map<String,String> specMap;
+
+    public Map<String, String> getSpecMap() {
+        return specMap;
+    }
+
+    public void setSpecMap(Map<String, String> specMap) {
+        this.specMap = specMap;
+    }
 
     public Long getId() {
         return id;
