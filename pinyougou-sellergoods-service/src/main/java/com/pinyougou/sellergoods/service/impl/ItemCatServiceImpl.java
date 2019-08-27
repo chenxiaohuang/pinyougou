@@ -10,6 +10,7 @@ import com.pinyougou.pojo.TbItemCatExample.Criteria;
 import com.pinyougou.sellergoods.service.ItemCatService;
 import entity.PageResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -25,6 +26,9 @@ public class ItemCatServiceImpl implements ItemCatService {
 
 	@Autowired
 	private TbItemCatMapper itemCatMapper;
+
+	@Autowired//注入这个要引入工具类common的
+	private RedisTemplate redisTemplate;
 	
 	/**
 	 * 查询全部
@@ -109,7 +113,16 @@ public class ItemCatServiceImpl implements ItemCatService {
 	public List<TbItemCat> findByParentId(Long parentId) {
 		TbItemCatExample example1=new TbItemCatExample();
 		Criteria criteria1 = example1.createCriteria();
+		//根据父id查询
 		criteria1.andParentIdEqualTo(parentId);//根据父id查询
+
+		//每次执行查询的时候，一次性读取缓存进行存储 (因为每次增删改都要执行此方法)
+		List<TbItemCat> list = findAll();
+		for(TbItemCat itemCat:list){
+			redisTemplate.boundHashOps("itemCat").put(itemCat.getName(), itemCat.getTypeId());//itemCat.getName()：分类名，itemCat.getTypeId()：模板Id
+		}
+		System.out.println("更新缓存:商品分类表");
+
 		return  itemCatMapper.selectByExample(example1);//映射调用dao
 	}
 }

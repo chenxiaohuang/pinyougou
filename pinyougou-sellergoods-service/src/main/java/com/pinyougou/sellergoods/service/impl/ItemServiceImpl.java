@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * 服务实现层
+ * sku商品详情分类服务实现层
  * @author Administrator
  *
  */
@@ -133,7 +133,11 @@ public class ItemServiceImpl implements ItemService {
 		}
 		
 		Page<TbItem> page= (Page<TbItem>)itemMapper.selectByExample(example);		
+
+
 		return new PageResult(page.getTotal(), page.getResult());
 	}
-	
+
+
+
 }

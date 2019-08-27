@@ -14,6 +14,7 @@ import com.pinyougou.pojo.TbTypeTemplateExample.Criteria;
 import com.pinyougou.sellergoods.service.TypeTemplateService;
 import entity.PageResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -111,30 +112,58 @@ public class TypeTemplateServiceImpl implements TypeTemplateService {
 		}
 		
 		Page<TbTypeTemplate> page= (Page<TbTypeTemplate>)typeTemplateMapper.selectByExample(example);		
+		//调用封装的缓存处理方法
+		saveToRedis();
+
 		return new PageResult(page.getTotal(), page.getResult());
 	}
+	@Autowired
+	private RedisTemplate redisTemplate;
+
+	//封装的缓存处理方法
+	private void  saveToRedis(){
+		//获取模板数据
+		List<TbTypeTemplate> typeTemplateList = findAll();
+		//循环模板
+		for(TbTypeTemplate typeTemplate :typeTemplateList){
+			//存储品牌列表
+			List<Map> brandList = JSON.parseArray(typeTemplate.getBrandIds(), Map.class);//这里是从表中获取集合的字符串需要转换
+			redisTemplate.boundHashOps("brandList").put(typeTemplate.getId(), brandList);
+			//存储规格列表
+			List<Map> specList = findSpecList(typeTemplate.getId());//根据模板ID查询规格列表
+			redisTemplate.boundHashOps("specList").put(typeTemplate.getId(), specList);
+		}
+		System.out.println("缓存品牌列表");
+
+	}
+
 
 	@Autowired
 	private TbSpecificationOptionMapper specificationOptionMapper;
 
+	/**
+	 * 查询type_template模板表查询规格集合
+	 * @param id
+	 * @return
+	 */
 	@Override
 	public List<Map> findSpecList(Long id) {
 		//查询模板
-		TbTypeTemplate typeTemplate = typeTemplateMapper.selectByPrimaryKey(id);
+		TbTypeTemplate typeTemplate = typeTemplateMapper.selectByPrimaryKey(id);//得到一条模板表数据对象
 		//[{"id":27,"text":"网络"},{"id":32,"text":"机身内存"}]
-        String specIds = typeTemplate.getSpecIds();
-        //specIds = " [{"id":27,"text":"网络"},{"id":32,"text":"机身内存"}] "
-        List<Map> list = JSON.parseArray(typeTemplate.getSpecIds(), Map.class);
-        //因为下边需要遍历 需要获得id的值  根据id获取option
+        String specIds = typeTemplate.getSpecIds();//获取一条表数据对象的一个对应字段对应内容
+        //specIds = " [{"id":27,"text":"网络"},{"id":32,"text":"机身内存"}] "转成list=[{"id":27,"text":"网络"},{"id":32,"text":"机身内存"}]
+        List<Map> list = JSON.parseArray(typeTemplate.getSpecIds(), Map.class);//将表中获得的字符串对象转为list集合对象
+        //因为下边需要遍历 需要获得id的值  根据id获取option   遍历拿出list集合数组中的一个map={"id":27,"text":"网络"}specification表对象
 		for (Map map:list){//为了展开list集合往里面的map属性添加新的属性键值对options→27：[3g,4g...]
 			//规格选项列表
 			TbSpecificationOptionExample example = new TbSpecificationOptionExample();
 			com.pinyougou.pojo.TbSpecificationOptionExample.Criteria criteria = example.createCriteria();
-			criteria.andSpecIdEqualTo(new Long((Integer)map.get("id")));//添加下一步的标准sql语句条件
+			criteria.andSpecIdEqualTo(new Long((Integer)map.get("id")));//这个是spec_id在下一步根据这个id查询option表，添加下一步的标准sql语句条件
 			//查询数据库
 			List<TbSpecificationOption> options = specificationOptionMapper.selectByExample(example);//是null就添加所有；不是null就根据上一步的条件查询
 
-			map.put("options",options);
+			map.put("options",options);//起个名字"options"，然后把查出来的options的集合存到map中
 		}
 		return list;
 	}
